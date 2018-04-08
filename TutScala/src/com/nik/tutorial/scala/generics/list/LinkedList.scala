@@ -1,6 +1,6 @@
 package com.nik.tutorial.scala.generics.list
 
-class LinkedList[T] (val value:T,val next:LinkedList[T]) extends Node[T] {
+class LinkedList[T] (val head:T,val tail:LinkedList[T]) extends List[T] {
 	/**Always returns false as list is non empty*/
 	override def isEmpty():Boolean = {
 			false
@@ -8,7 +8,7 @@ class LinkedList[T] (val value:T,val next:LinkedList[T]) extends Node[T] {
 
 	/** returns true if value is not null otherwise false*/
 	override def contains():Boolean = {
-			if(value!=null)
+			if(head!=null)
 				true
 				else 
 					false
@@ -16,18 +16,18 @@ class LinkedList[T] (val value:T,val next:LinkedList[T]) extends Node[T] {
 
 	/** retrieves the value from node */
 	def getValue():T = {
-			value
+			head
 	}
 
 	/** retrieves rest of the list*/
-	def getNext():LinkedList[T] = {
-			next
+	def getTail():LinkedList[T] = {
+			tail
 	}
 
 	override def toString():String = {
-			if(next!=null && !next.isEmpty())
-				value.toString() + "-" + next
+			if(tail!=null && !tail.isEmpty())
+				head.toString() + "-" + tail
 				else 
-					value.toString()
-	}
+					head.toString()
+	}	
 }
