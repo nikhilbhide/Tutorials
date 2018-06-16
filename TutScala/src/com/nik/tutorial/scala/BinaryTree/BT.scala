@@ -2,6 +2,8 @@ package com.nik.tutorial.scala.BinaryTree
 
 package com.nik.tutorial.scala
 
+import jdk.nashorn.internal.ir.EmptyNode
+
 import scala.math.Ordering
 
 abstract class  Node [T] {
@@ -9,10 +11,15 @@ abstract class  Node [T] {
   var left:Node[T]=null
   var right:Node[T] = null
   var parent:Node[T] = null
+  var element:T = null.asInstanceOf[T]
+
   def add(x:T, parent:Node[T], direction:Int)(implicit  order:Ordering[T]):Node[T]
   def contains(x:T)(implicit  order:Ordering[T]):Boolean
   def getElement():T = {
     null.asInstanceOf[T]
+  }
+  def findLeftMost(node:Node[T]): Node[T] ={
+    return new EmptyNode[T]()
   }
 
   def remove(x:T)(implicit  order:Ordering[T]):Node[T] = {
@@ -29,13 +36,13 @@ abstract class  Node [T] {
 
 case class Links[T](var parent:Node[T],var left:Node[T],var right:Node[T])
 
-class NonEmptyNode [T] (element:T,  var parent1:Node[T],  var left1:Node[T],  var right1:Node[T],f:(T,T)=>Boolean) extends Node[T] {
+class NonEmptyNode [T] (var element1:T,  var parent1:Node[T],  var left1:Node[T],  var right1:Node[T]) extends Node[T] {
   links.left = left
   links.right = right1
   this.left=left1
   this.right=right1
   this.parent=parent1
-
+  this.element = element1
   if(parent==null) {
     links.parent = parent1
     this.parent = parent1
@@ -46,22 +53,25 @@ class NonEmptyNode [T] (element:T,  var parent1:Node[T],  var left1:Node[T],  va
   }
 
   def add(x: T,node:Node[T],direction:Int)(implicit  order:Ordering[T]): Node[T] = {
-    println("executing NonEmptyNode")
-    if(order.compare(x,element)<1 || order.compare(x,element)==0) {
-      if(this.left.isInstanceOf[EmptyNode[T]]) {
-        val newNode = new NonEmptyNode[T](x,node,new EmptyNode(f),new EmptyNode(f),f)
-        this.left = newNode
-        this
+    println("executing NonEmptyNode and current element is : "+node.element)
+    if(order.compare(x,node.element)<1 || order.compare(x,node.element)==0) {
+      if(node.left.isInstanceOf[EmptyNode[T]]) {
+        val newNode = new NonEmptyNode[T](x,node,new EmptyNode(),new EmptyNode())
+        node.left = newNode
+        node
       }
-      else add(x,this.left,1)
+      else add(x,node.left,1)
     }
     else {
       if(node.right.isInstanceOf[EmptyNode[T]]) {
-        val newNode = new NonEmptyNode[T](x,node,new EmptyNode(f),new EmptyNode(f),f)
-        this.right = newNode
-        this
+        val newNode = new NonEmptyNode[T](x,node,new EmptyNode(),new EmptyNode())
+        node.right = newNode
+        node
       }
-      else add(x,this.right,2)
+      else {
+        println("going to right " + node.right.element)
+        add(x,node.right,2)
+      }
     }
     // if(f(element,x))
     //if (x < element) {
@@ -107,18 +117,44 @@ class NonEmptyNode [T] (element:T,  var parent1:Node[T],  var left1:Node[T],  va
   }
 
   override def remove(x:T)(implicit  order:Ordering[T]) : Node[T] = {
-    val nodeToRemove = getNodeByValue(x)
+    var nodeToRemove = getNodeByValue(x)
     if(nodeToRemove.isLeafNode()) {
-      if(nodeToRemove.parent!=null) {
-        if(nodeToRemove.parent.left==nodeToRemove) {
-          nodeToRemove.parent.left=new EmptyNode[T](null)
+      if (nodeToRemove.parent != null) {
+        if (nodeToRemove.parent.left == nodeToRemove) {
+          nodeToRemove.parent.left = new EmptyNode[T]
+        }
+        else {
+          nodeToRemove.parent.right = new EmptyNode[T]
         }
       }
       else {
-        nodeToRemove.links.parent.links.right=null
+        nodeToRemove = new EmptyNode[T]
       }
     }
+    else if(nodeToRemove.right.isInstanceOf[EmptyNode[T]]) {
+      nodeToRemove.element=nodeToRemove.left.element
+      nodeToRemove.left=new EmptyNode[T]
+    }
+    else if(nodeToRemove.left.isInstanceOf[EmptyNode[T]]) {
+      nodeToRemove.element=nodeToRemove.right.element
+      nodeToRemove.right=new EmptyNode[T]
+    }
+    else {
+      val leftMostNode = findLeftMost(nodeToRemove)
+      println("Left Most Node is "+leftMostNode.element)
+      nodeToRemove.element=leftMostNode.element
+      leftMostNode.parent.left = new EmptyNode[T]
+      }
     this
+  }
+
+  override def findLeftMost(node: Node[T]): Node[T] = {
+    if(!node.left.isInstanceOf[EmptyNode[T]]) {
+      findLeftMost(node.left)
+    }
+    else {
+      node
+    }
   }
 
   override def toString: String = {
@@ -126,9 +162,9 @@ class NonEmptyNode [T] (element:T,  var parent1:Node[T],  var left1:Node[T],  va
   }
 }
 
-class EmptyNode[T] (f:(T,T)=>Boolean) extends Node [T] {
+class EmptyNode[T] extends Node [T] {
   def add(x:T,parent:Node[T],direction:Int) (implicit  order:Ordering[T]):Node[T] = {
-    val node = new NonEmptyNode[T](x,parent,new EmptyNode(f),new EmptyNode(f),f)
+    val node = new NonEmptyNode[T](x,parent,new EmptyNode(),new EmptyNode())
     println("Node is"+node.getElement())
     if(direction==1) {
       parent.links.left = node
@@ -159,14 +195,19 @@ object BT {
       else false
     }
 
-    var tree = new NonEmptyNode[String]("B",null,new EmptyNode[String](f), new EmptyNode[String](f),f)
+    var tree = new NonEmptyNode[String]("D",null,new EmptyNode[String], new EmptyNode[String])
     var tree1 = tree.add("A",tree,1)
+    tree1 = tree1.add("G",tree,1)
     println(tree1.toString)
-    println(tree1.contains("B"))
-    var success = tree1.remove("A")
-    // println(success.toString)
-    println(success)
-    println(success.hashCode())
+    tree1 = tree1.add("C",tree,2)
+    tree1 = tree1.add("J",tree,2)
+    tree1 = tree1.add("F",tree,2)
 
+    println(tree.toString)
+    println(tree1.contains("B"))
+    var success = tree.remove("G")
+    println(tree.toString)
+    //println(success)
+    //println(success.hashCode())
   }
 }
