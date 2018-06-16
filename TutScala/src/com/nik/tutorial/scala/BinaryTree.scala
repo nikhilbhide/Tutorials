@@ -1,6 +1,6 @@
-package scala
+package com.nik.tutorial.scala
 
-import math.Ordering
+import scala.math.Ordering
 
 abstract class  Node [T] {
   var links:Links[T] = Links(null,null,null)
